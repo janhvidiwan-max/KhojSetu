@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
-  User, 
+  User as UserIcon, 
   MapPin, 
   Clock, 
   Calendar, 
@@ -15,7 +15,10 @@ import {
   Building,
   CheckCircle2,
   Printer,
-  ChevronDown
+  ChevronDown,
+  Lock,
+  UserCheck,
+  Plus
 } from 'lucide-react';
 import Sidebar from '../components/layout/Sidebar';
 import Navbar from '../components/layout/Navbar';
@@ -23,11 +26,13 @@ import Footer from '../components/layout/Footer';
 import BrandDisclaimer from '../components/branding/BrandDisclaimer';
 import LogoMark from '../components/branding/LogoMark';
 import { apiService } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import { MissingPersonCase, CandidateMatch, TimelineEvent, CaseStatus } from '../types';
 
 export const CaseDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [caseItem, setCaseItem] = useState<MissingPersonCase | null>(null);
   const [matches, setMatches] = useState<CandidateMatch[]>([]);
@@ -36,6 +41,14 @@ export const CaseDetailsPage: React.FC = () => {
   const [investigatorNote, setInvestigatorNote] = useState('');
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [statusSuccessMsg, setStatusSuccessMsg] = useState<string | null>(null);
+  
+  // Access Control & Permission States
+  const [accessState, setAccessState] = useState<{ hasAccess: boolean; reason?: string }>({ hasAccess: true });
+  const [permRequestMsg, setPermRequestMsg] = useState<string | null>(null);
+  const [showGrantModal, setShowGrantModal] = useState(false);
+  const [grantEmailInput, setGrantEmailInput] = useState('');
+  const [grantSuccessMsg, setGrantSuccessMsg] = useState<string | null>(null);
+
   const [notesList, setNotesList] = useState<string[]>([
     'Case registered following report submission.',
     'Reference photos processed through AI face embedding pipeline.'
@@ -48,7 +61,11 @@ export const CaseDetailsPage: React.FC = () => {
       if (!id) return;
       try {
         const res = await apiService.getCaseById(id);
-        if (res.case) setCaseItem(res.case);
+        if (res.case) {
+          setCaseItem(res.case);
+          const access = await apiService.checkCaseAccess(res.case.caseId, user);
+          setAccessState(access);
+        }
         if (res.matches) setMatches(res.matches);
         if (res.timeline) setTimeline(res.timeline);
       } catch (err) {
@@ -56,7 +73,7 @@ export const CaseDetailsPage: React.FC = () => {
       }
     }
     loadCaseDetails();
-  }, [id]);
+  }, [id, user]);
 
   const handleUpdateStatus = async (newStatus: CaseStatus) => {
     if (!caseItem) return;
@@ -69,9 +86,9 @@ export const CaseDetailsPage: React.FC = () => {
         id: `evt-${Date.now()}`,
         caseId: caseItem.caseId,
         timestamp: new Date().toISOString(),
-        user: 'Inspector Vikram Singh',
+        user: user?.name || 'Inspector Officer',
         action: `Status Updated to ${newStatus}`,
-        description: `Investigating officer updated case status to ${newStatus}.`
+        description: `Officer updated case status to ${newStatus}.`
       };
       setTimeline((prev) => [newEvt, ...prev]);
       setStatusSuccessMsg(`Status updated to "${newStatus}"!`);
@@ -79,6 +96,23 @@ export const CaseDetailsPage: React.FC = () => {
     } catch {
       // ignore
     }
+  };
+
+  const handleRequestPermission = async () => {
+    if (!caseItem || !user) return;
+    const res = await apiService.requestCasePermission(caseItem.caseId, user);
+    setPermRequestMsg(res.message);
+  };
+
+  const handleGrantPermission = async () => {
+    if (!caseItem || !grantEmailInput.trim() || !user) return;
+    const res = await apiService.grantCasePermission(caseItem.caseId, grantEmailInput.trim(), user.name);
+    setGrantSuccessMsg(res.message);
+    setGrantEmailInput('');
+    setTimeout(() => {
+      setGrantSuccessMsg(null);
+      setShowGrantModal(false);
+    }, 2000);
   };
 
   const handleAddNote = () => {
@@ -91,7 +125,7 @@ export const CaseDetailsPage: React.FC = () => {
         id: `evt-${Date.now()}`,
         caseId: caseItem?.caseId || '',
         timestamp: new Date().toISOString(),
-        user: 'Inspector Vikram Singh',
+        user: user?.name || 'Investigator Officer',
         action: 'Investigator Note Added',
         description: investigatorNote.trim()
       };
@@ -105,6 +139,55 @@ export const CaseDetailsPage: React.FC = () => {
         <div className="text-center space-y-3">
           <div className="w-8 h-8 rounded-full border-2 border-cyan-500 border-t-transparent animate-spin mx-auto" />
           <p className="text-xs text-slate-400">Loading ReturnHome Case Record...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Security Access Boundary Screen
+  if (!accessState.hasAccess) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex">
+        <Sidebar />
+        <div className="flex-1 flex flex-col min-w-0">
+          <Navbar />
+          <main className="flex-1 p-8 flex items-center justify-center">
+            <div className="max-w-lg w-full bg-slate-900 border border-slate-800 rounded-3xl p-8 text-center space-y-6 shadow-2xl">
+              <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400">
+                <Lock className="w-8 h-8" />
+              </div>
+              <div className="space-y-2">
+                <span className="text-xs font-mono font-bold text-cyan-400 uppercase bg-cyan-950 px-3 py-1 rounded-full border border-cyan-800">
+                  Case #{caseItem.caseId} Restricted
+                </span>
+                <h2 className="text-2xl font-extrabold text-white">Investigation Permission Required</h2>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  {accessState.reason || 'You need explicit access permission from the Lead Admin or Case Officer to view this investigation.'}
+                </p>
+              </div>
+
+              {permRequestMsg ? (
+                <div className="p-4 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 rounded-2xl text-xs font-bold flex items-center justify-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" /> {permRequestMsg}
+                </div>
+              ) : (
+                <button
+                  onClick={handleRequestPermission}
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 via-cyan-600 to-teal-500 text-white font-bold text-xs shadow-lg flex items-center justify-center gap-2"
+                >
+                  <UserCheck className="w-4 h-4" /> Request Investigation Permission
+                </button>
+              )}
+
+              <button
+                onClick={() => navigate('/cases')}
+                className="text-xs text-slate-400 hover:text-white font-semibold underline block mx-auto"
+              >
+                Return to Case Directory
+              </button>
+            </div>
+          </main>
+          <Footer />
         </div>
       </div>
     );
@@ -128,6 +211,16 @@ export const CaseDetailsPage: React.FC = () => {
             </button>
 
             <div className="flex items-center gap-3">
+              {/* Grant Access Button for Admins */}
+              {user?.role === 'Admin' && (
+                <button
+                  onClick={() => setShowGrantModal(true)}
+                  className="px-3.5 py-1.5 rounded-xl bg-cyan-600/20 border border-cyan-500/40 hover:bg-cyan-600/30 text-xs font-semibold text-cyan-300 flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Grant Investigation Access
+                </button>
+              )}
+
               <button
                 onClick={() => navigate(`/cases/${caseItem.caseId}/edit`)}
                 className="px-3.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 hover:border-slate-600 text-xs font-semibold text-slate-200 flex items-center gap-1.5"
@@ -148,6 +241,50 @@ export const CaseDetailsPage: React.FC = () => {
               </button>
             </div>
           </div>
+
+          {/* Grant Permission Modal */}
+          {showGrantModal && (
+            <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+                <h3 className="font-extrabold text-white text-base flex items-center gap-2">
+                  <UserCheck className="w-5 h-5 text-cyan-400" /> Grant Investigation Permission
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Authorize an investigator or field analyst by email to view, analyze CCTV feeds, and add notes for Case #{caseItem.caseId}.
+                </p>
+
+                {grantSuccessMsg ? (
+                  <div className="p-3 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 rounded-xl text-xs font-bold flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" /> {grantSuccessMsg}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <input
+                      type="email"
+                      value={grantEmailInput}
+                      onChange={(e) => setGrantEmailInput(e.target.value)}
+                      placeholder="e.g. investigator@returnhome.gov.in"
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-cyan-500"
+                    />
+                    <div className="flex items-center justify-end gap-3 pt-2">
+                      <button
+                        onClick={() => setShowGrantModal(false)}
+                        className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleGrantPermission}
+                        className="px-5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-md"
+                      >
+                        Grant Access
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Status Update Success Banner */}
           {statusSuccessMsg && (

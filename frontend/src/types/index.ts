@@ -39,6 +39,19 @@ export interface MissingPersonCase {
   createdBy: string;
   createdAt: string;
   updatedAt: string;
+  assignedInvestigators?: string[]; // Array of emails authorized to investigate
+  reporterEmail?: string; // Email of public citizen reporter
+}
+
+export interface CasePermission {
+  permissionId: string;
+  caseId: string;
+  userId: string;
+  userEmail: string;
+  userName: string;
+  grantedBy: string;
+  status: 'Approved' | 'Pending' | 'Denied';
+  grantedAt: string;
 }
 
 export type MatchStatus = 'Pending Review' | 'Accepted Lead' | 'Rejected' | 'Escalated' | 'Verified';
@@ -56,9 +69,9 @@ export interface CandidateMatch {
   latitude: number;
   longitude: number;
   timestamp: string;
-  similarityScore: number; // 0 to 1.0 (e.g., 0.91)
+  similarityScore: number;
   confidenceTier: ConfidenceTier;
-  trackingId: string; // e.g. TRACK-00021
+  trackingId: string;
   status: MatchStatus;
   reviewedBy?: string;
   reviewedAt?: string;

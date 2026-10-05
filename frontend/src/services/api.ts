@@ -240,6 +240,35 @@ function saveLocalMatches(matches: CandidateMatch[]) {
   localStorage.setItem('returnhome_matches', JSON.stringify(matches));
 }
 
+// Case Permission Storage & Access Control Helpers
+const INITIAL_PERMISSIONS: any[] = [
+  {
+    permissionId: 'perm-101',
+    caseId: 'MP-2026-0001',
+    userId: 'usr-investigator-1',
+    userEmail: 'investigator@returnhome.gov.in',
+    userName: 'Sub-Inspector Anjali Rao',
+    grantedBy: 'Inspector Vikram Singh (Admin)',
+    status: 'Approved',
+    grantedAt: '2026-09-06T16:00:00Z'
+  }
+];
+
+function getLocalPermissions(): any[] {
+  try {
+    const raw = localStorage.getItem('returnhome_permissions');
+    if (raw) return JSON.parse(raw);
+  } catch {
+    // Ignore
+  }
+  localStorage.setItem('returnhome_permissions', JSON.stringify(INITIAL_PERMISSIONS));
+  return INITIAL_PERMISSIONS;
+}
+
+function saveLocalPermissions(perms: any[]) {
+  localStorage.setItem('returnhome_permissions', JSON.stringify(perms));
+}
+
 export const apiService = {
   // Auth
   async login(email: string, password: string) {
@@ -591,5 +620,118 @@ export const apiService = {
 
       return { success: true, total: logs.length, logs };
     }
+  },
+
+  // Permissions & Role Access Control
+  async checkCaseAccess(caseId: string, user: User | null): Promise<{ hasAccess: boolean; reason?: string }> {
+    if (!user) return { hasAccess: false, reason: 'User not authenticated' };
+    if (user.role === 'Admin') return { hasAccess: true };
+
+    const cases = getLocalCases();
+    const foundCase = cases.find((c) => c.caseId.toLowerCase() === caseId.toLowerCase());
+    if (!foundCase) return { hasAccess: true }; // New case / fallback
+
+    // Public / Viewer role: Only their own submitted cases
+    if (user.role === 'Viewer' || user.role === 'Public') {
+      const isOwner = foundCase.reporterEmail?.toLowerCase() === user.email.toLowerCase();
+      return {
+        hasAccess: isOwner,
+        reason: isOwner ? undefined : 'Public citizens can only view cases submitted by their own account.'
+      };
+    }
+
+    // Investigator / Analyst role: Assigned or Approved Permission required
+    const isCreator = foundCase.createdBy.toLowerCase().includes(user.name.toLowerCase()) || user.name.toLowerCase().includes(foundCase.createdBy.toLowerCase());
+    const isAssigned = foundCase.assignedInvestigators?.some((email) => email.toLowerCase() === user.email.toLowerCase());
+    
+    const perms = getLocalPermissions();
+    const hasApprovedPerm = perms.some(
+      (p) => p.caseId.toLowerCase() === caseId.toLowerCase() && p.userEmail.toLowerCase() === user.email.toLowerCase() && p.status === 'Approved'
+    );
+
+    if (isCreator || isAssigned || hasApprovedPerm) {
+      return { hasAccess: true };
+    }
+
+    return {
+      hasAccess: false,
+      reason: 'Investigation Permission Required. You need explicit access permission granted by the Lead Admin or Primary Case Officer.'
+    };
+  },
+
+  async requestCasePermission(caseId: string, user: User): Promise<{ success: boolean; message: string; permission: any }> {
+    const perms = getLocalPermissions();
+    const existing = perms.find(
+      (p) => p.caseId.toLowerCase() === caseId.toLowerCase() && p.userEmail.toLowerCase() === user.email.toLowerCase()
+    );
+
+    if (existing) {
+      return {
+        success: true,
+        message: existing.status === 'Approved' ? 'Permission already approved!' : 'Permission request already pending review by Admin.',
+        permission: existing
+      };
+    }
+
+    const newPerm = {
+      permissionId: `perm-${Date.now()}`,
+      caseId,
+      userId: user.id,
+      userEmail: user.email,
+      userName: user.name,
+      grantedBy: 'Pending Admin Approval',
+      status: 'Pending',
+      grantedAt: new Date().toISOString()
+    };
+
+    saveLocalPermissions([newPerm, ...perms]);
+    return {
+      success: true,
+      message: 'Investigation Access Permission requested successfully! Sent to Lead Admin for approval.',
+      permission: newPerm
+    };
+  },
+
+  async grantCasePermission(caseId: string, targetEmail: string, grantedBy: string): Promise<{ success: boolean; message: string }> {
+    const perms = getLocalPermissions();
+    const idx = perms.findIndex(
+      (p) => p.caseId.toLowerCase() === caseId.toLowerCase() && p.userEmail.toLowerCase() === targetEmail.toLowerCase()
+    );
+
+    if (idx !== -1) {
+      perms[idx].status = 'Approved';
+      perms[idx].grantedBy = grantedBy;
+      perms[idx].grantedAt = new Date().toISOString();
+    } else {
+      perms.push({
+        permissionId: `perm-${Date.now()}`,
+        caseId,
+        userId: `usr-${Date.now()}`,
+        userEmail: targetEmail,
+        userName: targetEmail.split('@')[0].toUpperCase(),
+        grantedBy,
+        status: 'Approved',
+        grantedAt: new Date().toISOString()
+      });
+    }
+    saveLocalPermissions(perms);
+
+    // Update Case assignedInvestigators
+    const cases = getLocalCases();
+    const cIdx = cases.findIndex((c) => c.caseId.toLowerCase() === caseId.toLowerCase());
+    if (cIdx !== -1) {
+      const assigned = cases[cIdx].assignedInvestigators || [];
+      if (!assigned.includes(targetEmail)) {
+        cases[cIdx].assignedInvestigators = [...assigned, targetEmail];
+        saveLocalCases(cases);
+      }
+    }
+
+    return { success: true, message: `Investigation access granted to ${targetEmail}.` };
+  },
+
+  async getCasePermissions(caseId: string): Promise<any[]> {
+    const perms = getLocalPermissions();
+    return perms.filter((p) => p.caseId.toLowerCase() === caseId.toLowerCase());
   }
 };
