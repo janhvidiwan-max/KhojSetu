@@ -77,7 +77,7 @@ export const DashboardPage: React.FC = () => {
                   ReturnHome Investigation Command Dashboard
                 </h1>
                 <p className="text-xs text-slate-600">
-                  Intelligent Missing Person Detection & Candidate Match Monitoring • <strong className="text-cyan-700 font-bold">“From Missing to Found.”</strong>
+                  Intelligent Missing Person Detection & Candidate Match Monitoring • <strong className="text-cyan-700 font-bold">“Reconnecting Loved Ones • From Missing to Found.”</strong>
                 </p>
               </div>
             </div>
