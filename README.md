@@ -25,7 +25,7 @@ ReturnHome compares registered missing-person profiles against faces detected in
 - **Frontend**: React 18, Vite, TypeScript, Tailwind CSS, Lucide Icons, Leaflet Maps
 - **Backend**: Node.js, Express.js, Socket.IO, JWT Authentication, Mongoose / MongoDB
 - **AI Service**: Python 3.10+, FastAPI, PyTorch / OpenCV Computer Vision
-- **Deployment**: Vercel Production (`https://khojsetu.vercel.app` / ReturnHome), Docker
+- **Deployment**: Vercel Production (`https://ReturnHome.vercel.app` / ReturnHome), Docker
 
 ---
 
