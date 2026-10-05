@@ -84,7 +84,26 @@ app.use((req, res) => {
   });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = Number(process.env.PORT || 5000);
+
+// Process Security & Error Recovery
+process.on('uncaughtException', (error) => {
+  console.error('[ReturnHome Node Exception Handler]', error);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[ReturnHome Node Rejection Handler]', reason);
+});
+
+server.on('error', (err: any) => {
+  if (err.code === 'EADDRINUSE') {
+    const fallbackPort = PORT + 1;
+    console.warn(`[ReturnHome DB] Port ${PORT} is currently in use. Retrying server launch on fallback port ${fallbackPort}...`);
+    server.listen(fallbackPort);
+  } else {
+    console.error('[ReturnHome Server Error]', err);
+  }
+});
 
 // Start Server
 const startServer = async () => {
