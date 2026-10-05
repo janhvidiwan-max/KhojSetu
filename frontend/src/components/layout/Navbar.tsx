@@ -1,12 +1,19 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, Bell, Shield, LogOut, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { UserRole } from '../../types';
 
 export const Navbar: React.FC = () => {
+  const navigate = useNavigate();
   const { user, activeRole, switchRole, logout } = useAuth();
   const [showRoleMenu, setShowRoleMenu] = useState(false);
   const [showAlertsMenu, setShowAlertsMenu] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   const roles: UserRole[] = ['Admin', 'Investigator', 'Analyst', 'Viewer'];
 
@@ -107,7 +114,7 @@ export const Navbar: React.FC = () => {
           </div>
 
           <button
-            onClick={logout}
+            onClick={handleLogout}
             className="p-1.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-slate-100 transition-all ml-1"
             title="Logout"
           >

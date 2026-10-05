@@ -10,6 +10,7 @@ interface AuthContextType {
   activeRole: UserRole;
   isDemoMode: boolean;
   login: (email: string, pass: string, selectedRole?: UserRole) => Promise<boolean>;
+  register: (userData: { name: string; email: string; phone?: string; organization?: string; role?: UserRole; password?: string }) => Promise<boolean>;
   loginWithGoogle: (googleUser: { name: string; email: string; picture?: string }) => void;
   logout: () => void;
   switchRole: (role: UserRole) => void;
@@ -26,19 +27,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch {
       // ignore
     }
-    return {
-      id: 'usr-admin-1',
-      name: 'Inspector Vikram Singh',
-      email: 'vikram.singh@returnhome.gov.in',
-      role: 'Admin',
-      organization: 'Special Missing Persons Unit, Law Enforcement',
-      status: 'Active',
-      createdAt: '2026-01-15T09:00:00.000Z'
-    };
+    return null;
   });
 
   const [token, setToken] = useState<string | null>(() => {
-    return localStorage.getItem('returnhome_token') || 'returnhome-jwt-token-2026';
+    return localStorage.getItem('returnhome_token') || null;
   });
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -47,6 +40,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, pass: string, selectedRole?: UserRole): Promise<boolean> => {
     setIsLoading(true);
+    if (!email || !email.includes('@')) {
+      setIsLoading(false);
+      throw new Error('Please enter a valid official email address.');
+    }
+    if (!pass || pass.length < 6) {
+      setIsLoading(false);
+      throw new Error('Security Error: Password must be at least 6 characters.');
+    }
+
     try {
       const res = await apiService.login(email, pass);
       if (res.token && res.user) {
@@ -60,16 +62,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return true;
       }
     } catch {
-      // Fallback
+      // Fallback local check
+    }
+
+    // Check registered local users list
+    let localUsers: any[] = [];
+    try {
+      const stored = localStorage.getItem('returnhome_users');
+      if (stored) localUsers = JSON.parse(stored);
+    } catch {
+      // ignore
+    }
+
+    const matchedUser = localUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (matchedUser) {
+      if (matchedUser.password && matchedUser.password !== pass) {
+        setIsLoading(false);
+        throw new Error('Security Error: Invalid password provided.');
+      }
+      setUser(matchedUser);
+      setActiveRole(matchedUser.role);
+      const mockToken = `returnhome-jwt-${Date.now()}`;
+      setToken(mockToken);
+      localStorage.setItem('returnhome_token', mockToken);
+      localStorage.setItem('returnhome_user', JSON.stringify(matchedUser));
+      setIsLoading(false);
+      return true;
     }
 
     const assignedRole = selectedRole || (email.includes('admin') ? 'Admin' : email.includes('citizen') ? 'Viewer' : 'Investigator');
     const newUser: User = {
       id: `usr-${Date.now()}`,
-      name: email.split('@')[0].toUpperCase(),
-      email,
+      name: email.split('@')[0].replace('.', ' ').toUpperCase(),
+      email: email.toLowerCase(),
       role: assignedRole,
-      organization: assignedRole === 'Admin' ? 'Delhi Police Command Center' : assignedRole === 'Viewer' ? 'Public Citizen Reporter' : 'ReturnHome Investigation Unit',
+      organization: assignedRole === 'Admin' ? 'Delhi Police Command Center' : assignedRole === 'Viewer' ? 'Public Citizen Reporter' : 'ReturnHome Special Unit',
       status: 'Active',
       createdAt: new Date().toISOString()
     };
@@ -77,6 +104,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setActiveRole(newUser.role);
     setToken('returnhome-session-jwt-2026');
     localStorage.setItem('returnhome_token', 'returnhome-session-jwt-2026');
+    localStorage.setItem('returnhome_user', JSON.stringify(newUser));
+    setIsLoading(false);
+    return true;
+  };
+
+  const register = async (userData: { name: string; email: string; phone?: string; organization?: string; role?: UserRole; password?: string }): Promise<boolean> => {
+    setIsLoading(true);
+    if (!userData.name || !userData.email || !userData.password) {
+      setIsLoading(false);
+      throw new Error('Name, email, and password are required.');
+    }
+    if (userData.password.length < 6) {
+      setIsLoading(false);
+      throw new Error('Password must be at least 6 characters long.');
+    }
+
+    const newUser: User = {
+      id: `usr-${Date.now()}`,
+      name: userData.name,
+      email: userData.email.toLowerCase(),
+      role: userData.role || 'Investigator',
+      organization: userData.organization || 'ReturnHome Investigation Division',
+      status: 'Active',
+      createdAt: new Date().toISOString()
+    };
+
+    // Store in local users DB
+    try {
+      const stored = localStorage.getItem('returnhome_users');
+      const usersList = stored ? JSON.parse(stored) : [];
+      usersList.push({ ...newUser, password: userData.password, phone: userData.phone });
+      localStorage.setItem('returnhome_users', JSON.stringify(usersList));
+    } catch {
+      // ignore
+    }
+
+    setUser(newUser);
+    setActiveRole(newUser.role);
+    setToken(`returnhome-jwt-reg-${Date.now()}`);
+    localStorage.setItem('returnhome_token', `returnhome-jwt-reg-${Date.now()}`);
     localStorage.setItem('returnhome_user', JSON.stringify(newUser));
     setIsLoading(false);
     return true;
@@ -125,6 +192,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         activeRole,
         isDemoMode,
         login,
+        register,
         loginWithGoogle,
         logout,
         switchRole,

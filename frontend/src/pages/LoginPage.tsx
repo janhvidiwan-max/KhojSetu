@@ -37,17 +37,26 @@ export const LoginPage: React.FC = () => {
     }
   ];
 
+  const [error, setError] = useState<string>('');
+
   const handleRoleSelect = (roleItem: typeof roleOptions[0]) => {
     setSelectedRole(roleItem.role);
     setEmail(roleItem.email);
+    setError('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    await login(email, password, selectedRole);
-    setLoading(false);
-    navigate('/dashboard');
+    setError('');
+    try {
+      await login(email, password, selectedRole);
+      setLoading(false);
+      navigate('/dashboard');
+    } catch (err: any) {
+      setError(err.message || 'Authentication failed. Please check credentials.');
+      setLoading(false);
+    }
   };
 
   const handleGoogleSignIn = () => {
@@ -100,6 +109,13 @@ export const LoginPage: React.FC = () => {
 
         {/* Login Form Card */}
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-5">
+          {error && (
+            <div className="p-3.5 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs font-semibold flex items-center gap-2">
+              <Lock className="w-4 h-4 shrink-0 text-red-400" />
+              <span>{error}</span>
+            </div>
+          )}
+
           {/* Google OAuth Button */}
           <button
             type="button"

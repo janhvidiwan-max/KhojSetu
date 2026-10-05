@@ -21,8 +21,19 @@ import Logo from '../components/branding/Logo';
 import BrandDisclaimer from '../components/branding/BrandDisclaimer';
 import Footer from '../components/layout/Footer';
 
+import { useAuth } from '../context/AuthContext';
+
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+
+  const handleLaunchDashboard = () => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    } else {
+      navigate('/login');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-cyan-500 selection:text-white">
@@ -44,12 +55,12 @@ export const LandingPage: React.FC = () => {
             >
               Investigator Login
             </Link>
-            <Link
-              to="/dashboard"
+            <button
+              onClick={handleLaunchDashboard}
               className="text-xs font-bold px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 text-white shadow-md shadow-indigo-200 hover:shadow-lg hover:shadow-indigo-300 hover:scale-[1.02] transition-all flex items-center gap-1.5"
             >
               Launch Dashboard <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+            </button>
           </div>
         </div>
       </header>
@@ -69,11 +80,11 @@ export const LandingPage: React.FC = () => {
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight text-slate-900">
-              Khoj<span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-700 via-blue-600 to-cyan-600">Setu</span>
+              Return<span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-700 via-blue-600 to-cyan-600">Home</span>
             </h1>
 
             <p className="text-xl sm:text-2xl font-extrabold text-cyan-700 tracking-wide font-sans">
-              “From Missing to Found.”
+              “Reconnecting Loved Ones • From Missing to Found.”
             </p>
 
             <p className="text-base sm:text-lg text-slate-700 max-w-2xl leading-relaxed font-normal">
@@ -83,7 +94,7 @@ export const LandingPage: React.FC = () => {
             {/* CTA Buttons */}
             <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
               <button
-                onClick={() => navigate('/dashboard')}
+                onClick={handleLaunchDashboard}
                 className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 text-white font-bold text-sm shadow-xl shadow-indigo-200 hover:shadow-indigo-300 hover:scale-[1.02] transition-all flex items-center gap-2"
               >
                 Get Started <ArrowRight className="w-4 h-4" />
@@ -95,7 +106,7 @@ export const LandingPage: React.FC = () => {
                 <Lock className="w-4 h-4 text-cyan-600" /> Investigator Login
               </button>
               <button
-                onClick={() => navigate('/dashboard')}
+                onClick={handleLaunchDashboard}
                 className="px-6 py-3.5 rounded-xl bg-cyan-50 border border-cyan-200 text-cyan-800 font-bold text-sm hover:bg-cyan-100/70 transition-all"
               >
                 Explore Live Demo Data

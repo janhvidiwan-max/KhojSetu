@@ -21,6 +21,8 @@ import AuditLogsPage from './pages/AuditLogsPage';
 import SettingsPage from './pages/SettingsPage';
 import PublicReportPage from './pages/PublicReportPage';
 
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
+
 export const App: React.FC = () => {
   return (
     <AuthProvider>
@@ -29,24 +31,25 @@ export const App: React.FC = () => {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/cases" element={<MissingPersonsPage />} />
-          <Route path="/cases/new" element={<RegisterMissingPersonPage />} />
-          <Route path="/cases/:id" element={<CaseDetailsPage />} />
-          <Route path="/cases/:id/edit" element={<EditCasePage />} />
-          
-          <Route path="/video-analysis" element={<VideoAnalysisPage />} />
-          <Route path="/matches" element={<PotentialMatchesPage />} />
-          <Route path="/timeline" element={<InvestigationTimelinePage />} />
-          <Route path="/map" element={<MapViewPage />} />
-          <Route path="/alerts" element={<AlertsPage />} />
-          <Route path="/reports" element={<ReportsPage />} />
-          
-          <Route path="/users" element={<UsersPage />} />
-          <Route path="/audit-logs" element={<AuditLogsPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
           <Route path="/public-report" element={<PublicReportPage />} />
+
+          {/* Protected Routes */}
+          <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+          <Route path="/cases" element={<ProtectedRoute><MissingPersonsPage /></ProtectedRoute>} />
+          <Route path="/cases/new" element={<ProtectedRoute><RegisterMissingPersonPage /></ProtectedRoute>} />
+          <Route path="/cases/:id" element={<ProtectedRoute><CaseDetailsPage /></ProtectedRoute>} />
+          <Route path="/cases/:id/edit" element={<ProtectedRoute><EditCasePage /></ProtectedRoute>} />
+
+          <Route path="/video-analysis" element={<ProtectedRoute><VideoAnalysisPage /></ProtectedRoute>} />
+          <Route path="/matches" element={<ProtectedRoute><PotentialMatchesPage /></ProtectedRoute>} />
+          <Route path="/timeline" element={<ProtectedRoute><InvestigationTimelinePage /></ProtectedRoute>} />
+          <Route path="/map" element={<ProtectedRoute><MapViewPage /></ProtectedRoute>} />
+          <Route path="/alerts" element={<ProtectedRoute><AlertsPage /></ProtectedRoute>} />
+          <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
+
+          <Route path="/users" element={<ProtectedRoute><UsersPage /></ProtectedRoute>} />
+          <Route path="/audit-logs" element={<ProtectedRoute><AuditLogsPage /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
