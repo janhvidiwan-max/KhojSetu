@@ -1,5 +1,37 @@
 import { User, MissingPersonCase, CandidateMatch, TimelineEvent, AuditLogItem, DashboardStats } from '../types';
 
+// Auto-sanitize and migrate any legacy client-side localStorage keys/values to ReturnHome
+function autoSanitizeLocalStorage() {
+  try {
+    const oldKeys = ['khojsetu_cases', 'khojsetu_matches', 'khojsetu_permissions', 'khojsetu_audit', 'khojsetu_user', 'khojsetu_token', 'khojsetu_users'];
+    oldKeys.forEach(oldKey => {
+      const val = localStorage.getItem(oldKey);
+      if (val) {
+        const newKey = oldKey.replace('khojsetu_', 'returnhome_');
+        if (!localStorage.getItem(newKey)) {
+          localStorage.setItem(newKey, val);
+        }
+        localStorage.removeItem(oldKey);
+      }
+    });
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith('returnhome_') || key.startsWith('khojsetu_'))) {
+        let val = localStorage.getItem(key);
+        if (val && (val.includes('KhojSetu') || val.includes('khojsetu') || val.includes('Khojsetu'))) {
+          val = val.replace(/KhojSetu/gi, 'ReturnHome').replace(/khojsetu/gi, 'returnhome');
+          localStorage.setItem(key, val);
+        }
+      }
+    }
+  } catch {
+    // Ignore cross-origin or storage quota exceptions
+  }
+}
+
+autoSanitizeLocalStorage();
+
 const API_BASE_URL = '/api';
 
 // Helper for HTTP requests
