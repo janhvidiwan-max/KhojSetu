@@ -14,7 +14,8 @@ import {
   Phone,
   Building,
   CheckCircle2,
-  Printer
+  Printer,
+  ChevronDown
 } from 'lucide-react';
 import Sidebar from '../components/layout/Sidebar';
 import Navbar from '../components/layout/Navbar';
@@ -22,7 +23,7 @@ import Footer from '../components/layout/Footer';
 import BrandDisclaimer from '../components/branding/BrandDisclaimer';
 import LogoMark from '../components/branding/LogoMark';
 import { apiService } from '../services/api';
-import { MissingPersonCase, CandidateMatch, TimelineEvent } from '../types';
+import { MissingPersonCase, CandidateMatch, TimelineEvent, CaseStatus } from '../types';
 
 export const CaseDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -33,10 +34,14 @@ export const CaseDetailsPage: React.FC = () => {
   const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
   const [activeTab, setActiveTab] = useState<'info' | 'matches' | 'timeline' | 'notes'>('info');
   const [investigatorNote, setInvestigatorNote] = useState('');
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  const [statusSuccessMsg, setStatusSuccessMsg] = useState<string | null>(null);
   const [notesList, setNotesList] = useState<string[]>([
-    'Case registered following police report from New Delhi Railway Station unit.',
+    'Case registered following report submission.',
     'Reference photos processed through AI face embedding pipeline.'
   ]);
+
+  const allStatuses: CaseStatus[] = ['Active', 'Under Investigation', 'Potential Match', 'Found', 'Closed'];
 
   useEffect(() => {
     async function loadCaseDetails() {
@@ -47,29 +52,63 @@ export const CaseDetailsPage: React.FC = () => {
         if (res.matches) setMatches(res.matches);
         if (res.timeline) setTimeline(res.timeline);
       } catch (err) {
-        console.warn('Backend server offline');
+        console.warn('Server offline');
       }
     }
     loadCaseDetails();
   }, [id]);
+
+  const handleUpdateStatus = async (newStatus: CaseStatus) => {
+    if (!caseItem) return;
+    try {
+      const res = await apiService.updateCase(caseItem.caseId, { status: newStatus });
+      setCaseItem(res.case);
+      setShowStatusDropdown(false);
+
+      const newEvt: TimelineEvent = {
+        id: `evt-${Date.now()}`,
+        caseId: caseItem.caseId,
+        timestamp: new Date().toISOString(),
+        user: 'Inspector Vikram Singh',
+        action: `Status Updated to ${newStatus}`,
+        description: `Investigating officer updated case status to ${newStatus}.`
+      };
+      setTimeline((prev) => [newEvt, ...prev]);
+      setStatusSuccessMsg(`Status updated to "${newStatus}"!`);
+      setTimeout(() => setStatusSuccessMsg(null), 3000);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleAddNote = () => {
+    if (investigatorNote.trim()) {
+      const newNote = `${new Date().toLocaleTimeString()} - ${investigatorNote.trim()}`;
+      setNotesList([...notesList, newNote]);
+      setInvestigatorNote('');
+
+      const newEvt: TimelineEvent = {
+        id: `evt-${Date.now()}`,
+        caseId: caseItem?.caseId || '',
+        timestamp: new Date().toISOString(),
+        user: 'Inspector Vikram Singh',
+        action: 'Investigator Note Added',
+        description: investigatorNote.trim()
+      };
+      setTimeline((prev) => [newEvt, ...prev]);
+    }
+  };
 
   if (!caseItem) {
     return (
       <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">
         <div className="text-center space-y-3">
           <div className="w-8 h-8 rounded-full border-2 border-cyan-500 border-t-transparent animate-spin mx-auto" />
-          <p className="text-xs text-slate-400">Loading KhojSetu Case Record...</p>
+          <p className="text-xs text-slate-400">Loading ReturnHome Case Record...</p>
         </div>
       </div>
     );
   }
-
-  const handleAddNote = () => {
-    if (investigatorNote.trim()) {
-      setNotesList([...notesList, `${new Date().toLocaleTimeString()} - ${investigatorNote.trim()}`]);
-      setInvestigatorNote('');
-    }
-  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex">
@@ -93,7 +132,7 @@ export const CaseDetailsPage: React.FC = () => {
                 onClick={() => navigate(`/cases/${caseItem.caseId}/edit`)}
                 className="px-3.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 hover:border-slate-600 text-xs font-semibold text-slate-200 flex items-center gap-1.5"
               >
-                <Edit className="w-3.5 h-3.5 text-cyan-400" /> Edit Case
+                <Edit className="w-3.5 h-3.5 text-cyan-400" /> Edit Case Profile
               </button>
               <button
                 onClick={() => navigate('/video-analysis')}
@@ -105,10 +144,17 @@ export const CaseDetailsPage: React.FC = () => {
                 onClick={() => navigate(`/reports?caseId=${caseItem.caseId}`)}
                 className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 hover:opacity-95 text-xs font-semibold text-white shadow-md flex items-center gap-1.5"
               >
-                <Printer className="w-3.5 h-3.5" /> Export Report (PDF)
+                <Printer className="w-3.5 h-3.5" /> Export Dossier (PDF)
               </button>
             </div>
           </div>
+
+          {/* Status Update Success Banner */}
+          {statusSuccessMsg && (
+            <div className="p-3 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 rounded-xl text-xs flex items-center gap-2 font-bold animate-pulse">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" /> {statusSuccessMsg}
+            </div>
+          )}
 
           {/* Main Case Banner Card */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
@@ -136,9 +182,43 @@ export const CaseDetailsPage: React.FC = () => {
                     }`}>
                       Priority: {caseItem.priority}
                     </span>
-                    <span className="text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2.5 py-0.5 rounded-full">
-                      Status: {caseItem.status}
-                    </span>
+
+                    {/* Interactive Status Selector Dropdown */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+                        className={`text-xs font-bold px-3 py-1 rounded-full border flex items-center gap-1.5 transition-all ${
+                          caseItem.status === 'Found'
+                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/30'
+                            : caseItem.status === 'Closed'
+                            ? 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'
+                            : 'bg-amber-500/20 text-amber-400 border-amber-500/40 hover:bg-amber-500/30'
+                        }`}
+                      >
+                        <span>Status: <strong>{caseItem.status}</strong></span>
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      </button>
+
+                      {showStatusDropdown && (
+                        <div className="absolute right-0 mt-2 w-48 bg-slate-950 border border-slate-700 rounded-xl shadow-2xl py-1 z-50 text-xs">
+                          <div className="px-3 py-1 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-800">
+                            Update Case Status
+                          </div>
+                          {allStatuses.map((st) => (
+                            <button
+                              key={st}
+                              onClick={() => handleUpdateStatus(st)}
+                              className={`w-full text-left px-3 py-1.5 font-semibold hover:bg-slate-800 flex items-center justify-between ${
+                                caseItem.status === st ? 'text-cyan-400 font-bold bg-slate-900' : 'text-slate-300'
+                              }`}
+                            >
+                              <span>{st}</span>
+                              {caseItem.status === st && <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400" />}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -252,37 +332,43 @@ export const CaseDetailsPage: React.FC = () => {
           {/* Tab 2: Candidate Matches */}
           {activeTab === 'matches' && (
             <div className="space-y-4">
-              {matches.map((m) => (
-                <div key={m.matchId} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-white text-sm">Match Candidate #{m.matchId}</span>
-                    <span className="font-bold text-emerald-400 font-mono text-xs bg-emerald-950/60 border border-emerald-800/40 px-2.5 py-0.5 rounded">
-                      {Math.round(m.similarityScore * 100)}% Similarity Score
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-center">
-                      <span className="text-[11px] text-slate-400 font-semibold block mb-1">Registered Photo</span>
-                      <img src={m.missingPersonPhoto} alt="Ref" className="w-full h-40 object-cover rounded-lg border border-slate-700" />
-                    </div>
-                    <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-center">
-                      <span className="text-[11px] text-slate-400 font-semibold block mb-1">CCTV Detection ({m.cameraId})</span>
-                      <img src={m.detectedFrameUrl} alt="CCTV" className="w-full h-40 object-cover rounded-lg border border-cyan-500/60" />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2 text-xs text-slate-400">
-                    <span>Location: <strong className="text-slate-200">{m.location}</strong></span>
-                    <button
-                      onClick={() => navigate(`/matches?id=${m.matchId}`)}
-                      className="px-4 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs"
-                    >
-                      Inspect Side-by-Side & Verify
-                    </button>
-                  </div>
+              {matches.length === 0 ? (
+                <div className="p-8 bg-slate-900 border border-slate-800 rounded-2xl text-center text-slate-400 text-xs">
+                  No candidate leads flagged yet. Use the <strong>Analyze CCTV Footage</strong> workspace to scan video streams.
                 </div>
-              ))}
+              ) : (
+                matches.map((m) => (
+                  <div key={m.matchId} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-white text-sm">Match Candidate #{m.matchId}</span>
+                      <span className="font-bold text-emerald-400 font-mono text-xs bg-emerald-950/60 border border-emerald-800/40 px-2.5 py-0.5 rounded">
+                        {Math.round(m.similarityScore * 100)}% Similarity Score
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-center">
+                        <span className="text-[11px] text-slate-400 font-semibold block mb-1">Registered Photo</span>
+                        <img src={m.missingPersonPhoto} alt="Ref" className="w-full h-40 object-cover rounded-lg border border-slate-700" />
+                      </div>
+                      <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-center">
+                        <span className="text-[11px] text-slate-400 font-semibold block mb-1">CCTV Detection ({m.cameraId})</span>
+                        <img src={m.detectedFrameUrl} alt="CCTV" className="w-full h-40 object-cover rounded-lg border border-cyan-500/60" />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 text-xs text-slate-400">
+                      <span>Location: <strong className="text-slate-200">{m.location}</strong></span>
+                      <button
+                        onClick={() => navigate(`/matches?id=${m.matchId}`)}
+                        className="px-4 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs"
+                      >
+                        Inspect Side-by-Side & Verify
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           )}
 
