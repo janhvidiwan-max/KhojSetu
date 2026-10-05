@@ -48,7 +48,7 @@ export const Sidebar: React.FC = () => {
       {/* Navigation Links */}
       <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1 custom-scrollbar">
         <div className="px-3 pb-2 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
-          Investigation Workspace
+          ReturnHome Workspace
         </div>
 
         {navigation.map((item) => {
@@ -96,7 +96,7 @@ export const Sidebar: React.FC = () => {
           <span className="text-xs text-slate-700 font-semibold">Role: {activeRole}</span>
         </div>
         <span className="text-[10px] text-cyan-800 font-mono font-bold bg-cyan-100 border border-cyan-200 px-2 py-0.5 rounded-md">
-          DEMO MODE
+          ACTIVE ENGINE
         </span>
       </div>
     </aside>

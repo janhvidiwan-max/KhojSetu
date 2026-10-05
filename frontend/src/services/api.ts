@@ -4,7 +4,7 @@ const API_BASE_URL = '/api';
 
 // Helper for HTTP requests
 async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const token = localStorage.getItem('khojsetu_token');
+  const token = localStorage.getItem('returnhome_token');
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
@@ -211,33 +211,33 @@ const INITIAL_MATCHES: CandidateMatch[] = [
 // Helper to get local storage cases
 function getLocalCases(): MissingPersonCase[] {
   try {
-    const raw = localStorage.getItem('khojsetu_cases');
+    const raw = localStorage.getItem('returnhome_cases');
     if (raw) return JSON.parse(raw);
   } catch {
     // Ignore error
   }
-  localStorage.setItem('khojsetu_cases', JSON.stringify(INITIAL_CASES));
+  localStorage.setItem('returnhome_cases', JSON.stringify(INITIAL_CASES));
   return INITIAL_CASES;
 }
 
 function saveLocalCases(cases: MissingPersonCase[]) {
-  localStorage.setItem('khojsetu_cases', JSON.stringify(cases));
+  localStorage.setItem('returnhome_cases', JSON.stringify(cases));
 }
 
 // Helper to get local storage matches
 function getLocalMatches(): CandidateMatch[] {
   try {
-    const raw = localStorage.getItem('khojsetu_matches');
+    const raw = localStorage.getItem('returnhome_matches');
     if (raw) return JSON.parse(raw);
   } catch {
     // Ignore error
   }
-  localStorage.setItem('khojsetu_matches', JSON.stringify(INITIAL_MATCHES));
+  localStorage.setItem('returnhome_matches', JSON.stringify(INITIAL_MATCHES));
   return INITIAL_MATCHES;
 }
 
 function saveLocalMatches(matches: CandidateMatch[]) {
-  localStorage.setItem('khojsetu_matches', JSON.stringify(matches));
+  localStorage.setItem('returnhome_matches', JSON.stringify(matches));
 }
 
 export const apiService = {

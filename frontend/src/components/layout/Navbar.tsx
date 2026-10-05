@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Bell, Shield, User as UserIcon, LogOut, ChevronDown, CheckCircle2 } from 'lucide-react';
+import { Search, Bell, Shield, LogOut, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { UserRole } from '../../types';
 
@@ -74,10 +74,10 @@ export const Navbar: React.FC = () => {
             <div className="absolute right-0 mt-2 w-80 bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 z-50">
               <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
                 <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                  <Bell className="w-3.5 h-3.5 text-cyan-600" /> Real-Time Alerts
+                  <Bell className="w-3.5 h-3.5 text-cyan-600" /> Real-Time ReturnHome Alerts
                 </span>
                 <span className="text-[10px] bg-cyan-100 text-cyan-800 font-bold px-2 py-0.5 rounded-md font-mono">
-                  Socket.IO Active
+                  Live Stream Active
                 </span>
               </div>
               <div className="mt-3 space-y-2.5 max-h-60 overflow-y-auto">
@@ -87,7 +87,7 @@ export const Navbar: React.FC = () => {
                   <span className="text-[10px] text-amber-700 block">2 mins ago</span>
                 </div>
                 <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1">
-                  <span className="font-bold text-slate-900 block">CCTV Batch Analysis Done</span>
+                  <span className="font-bold text-slate-900 block">CCTV Batch Analysis Complete</span>
                   <p className="text-slate-600 text-[11px]">7,240 frames analyzed for CAM-02 stream.</p>
                   <span className="text-[10px] text-slate-400 block">15 mins ago</span>
                 </div>
@@ -103,7 +103,7 @@ export const Navbar: React.FC = () => {
           </div>
           <div className="hidden md:flex flex-col text-left">
             <span className="text-xs font-bold text-slate-900 leading-tight">{user?.name || 'Investigator'}</span>
-            <span className="text-[10px] text-slate-500 font-medium leading-tight">{user?.organization || 'KhojSetu Unit'}</span>
+            <span className="text-[10px] text-slate-500 font-medium leading-tight">{user?.organization || 'ReturnHome Unit'}</span>
           </div>
 
           <button

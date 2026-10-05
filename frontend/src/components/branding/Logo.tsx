@@ -20,7 +20,6 @@ export const Logo: React.FC<LogoProps> = ({
 }) => {
   const isIconOnly = variant === 'icon';
 
-  // Text color based on theme
   let titleColor = 'text-slate-900 dark:text-white';
   let subtitleColor = 'text-slate-500 dark:text-slate-400';
 
@@ -35,7 +34,6 @@ export const Logo: React.FC<LogoProps> = ({
     subtitleColor = 'text-slate-600';
   }
 
-  // Size styling
   let textSize = 'text-xl font-bold tracking-tight';
   let taglineSize = 'text-xs font-medium';
   if (size === 'sm') {
@@ -60,16 +58,16 @@ export const Logo: React.FC<LogoProps> = ({
         <div className="flex flex-col">
           <div className="flex items-center gap-1.5 leading-none">
             <span className={`${textSize} ${titleColor}`}>
-              Khoj<span className="text-cyan-500 dark:text-cyan-400">Setu</span>
+              Return<span className="text-cyan-500 dark:text-cyan-400">Home</span>
             </span>
-            <span className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded bg-cyan-500/10 text-cyan-500 dark:bg-cyan-400/10 dark:text-cyan-400 border border-cyan-500/20">
+            <span className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded bg-cyan-500/10 text-cyan-500 dark:bg-cyan-400/10 dark:text-cyan-400 border border-cyan-500/20">
               AI
             </span>
           </div>
 
           {showTagline && (
             <span className={`${taglineSize} ${subtitleColor} mt-0.5 font-sans tracking-wide`}>
-              From Missing to Found.
+              Reconnecting Loved Ones • From Missing to Found.
             </span>
           )}
         </div>

@@ -9,14 +9,14 @@ export const Footer: React.FC = () => {
         <div className="flex flex-col items-center md:items-start gap-2">
           <Logo variant="full" theme="light" size="sm" showTagline={true} />
           <p className="text-[11px] text-slate-500 max-w-sm text-center md:text-left">
-            An AI-assisted platform designed to help authorized investigators organize missing-person cases, analyze visual evidence, and review potential matches efficiently.
+            ReturnHome — An intelligent platform helping law enforcement officers and families reconnect missing loved ones through AI visual matching and satellite telemetry.
           </p>
         </div>
 
         {/* Disclaimer */}
         <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-3.5 max-w-md text-[11px] text-amber-900 text-center md:text-left shadow-sm">
           <strong className="text-amber-950 block mb-0.5 font-bold">Ethical AI & Human Review Safeguard</strong>
-          AI-generated matches are potential leads only and must be independently verified by authorized personnel. AI scores do not establish confirmed identity without human sign-off.
+          AI-generated face matches are candidate investigation leads and require independent human verification by authorized personnel before official action.
         </div>
 
         {/* Links */}
@@ -29,7 +29,7 @@ export const Footer: React.FC = () => {
             <a href="#contact" className="hover:text-indigo-600 transition-colors">Contact Support</a>
           </div>
           <span className="mt-1 font-mono text-[10px] text-slate-400">
-            KhojSetu v1.0.0 • DEMO DATA — NOT REAL PERSON INFORMATION
+            ReturnHome AI v1.0.0 • Operational Intelligence Engine
           </span>
         </div>
       </div>

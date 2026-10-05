@@ -100,7 +100,7 @@ export const RegisterPage: React.FC = () => {
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="rajesh.kumar@khojsetu.gov.in"
+                    placeholder="rajesh.kumar@returnhome.gov.in"
                     className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:border-cyan-500"
                   />
                 </div>
