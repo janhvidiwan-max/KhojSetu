@@ -6,8 +6,8 @@ services:
     ports:
       - "5173:5173"
     environment:
-      - VITE_APP_NAME=KhojSetu
-      - VITE_APP_TAGLINE=From Missing to Found.
+      - VITE_APP_NAME=ReturnHome
+      - VITE_APP_TAGLINE=Reconnecting Loved Ones • From Missing to Found.
     depends_on:
       - backend
 
@@ -17,8 +17,8 @@ services:
       - "5000:5000"
     environment:
       - PORT=5000
-      - MONGO_URI=mongodb://mongo:27017/khojsetu
-      - JWT_SECRET=khojsetu_jwt_secret_key_2026_investigation_secure_token
+      - MONGO_URI=mongodb://mongo:27017/returnhome
+      - JWT_SECRET=returnhome_jwt_secret_key_2026_investigation_secure_token
       - AI_SERVICE_URL=http://ai-service:8000
     depends_on:
       - mongo

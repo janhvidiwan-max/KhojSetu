@@ -303,7 +303,7 @@ export const apiService = {
         name: userData.name,
         email: userData.email,
         role: userData.role || 'Investigator',
-        organization: userData.organization || 'KhojSetu Investigation Unit',
+        organization: userData.organization || 'ReturnHome Investigation Unit',
         status: 'Active',
         createdAt: new Date().toISOString()
       };
@@ -389,7 +389,7 @@ export const apiService = {
         lastSeenLocation: caseData.lastSeenLocation || 'New Delhi Area',
         latitude: 28.6139,
         longitude: 77.209,
-        description: caseData.description || 'Missing person case reported to KhojSetu portal.',
+        description: caseData.description || 'Missing person case reported to ReturnHome portal.',
         clothingDescription: caseData.clothingDescription || 'Not specified',
         status: (caseData.status as any) || 'Active',
         priority: (caseData.priority as any) || 'High',

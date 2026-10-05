@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/khojsetu';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/returnhome';
 
 export let isMongoConnected = false;
 
@@ -14,11 +14,11 @@ export const connectDB = async (): Promise<boolean> => {
       serverSelectionTimeoutMS: 2000,
     });
     isMongoConnected = true;
-    console.log(`[KhojSetu DB] Connected to MongoDB: ${MONGO_URI}`);
+    console.log(`[ReturnHome DB] Connected to MongoDB: ${MONGO_URI}`);
     return true;
   } catch (error: any) {
     isMongoConnected = false;
-    console.warn(`[KhojSetu DB] MongoDB connection skipped (${error.message}). Operating in High-Performance Embedded Store Mode.`);
+    console.warn(`[ReturnHome DB] MongoDB connection skipped (${error.message}). Operating in High-Performance Embedded Store Mode.`);
     return false;
   }
 };

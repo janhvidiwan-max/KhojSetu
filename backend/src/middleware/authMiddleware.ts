@@ -11,7 +11,7 @@ export interface AuthRequest extends Request {
   };
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || 'khojsetu_jwt_secret_key_2026_investigation_secure_token';
+const JWT_SECRET = process.env.JWT_SECRET || 'returnhome_jwt_secret_key_2026_investigation_secure_token';
 
 export const protect = (req: AuthRequest, res: Response, next: NextFunction) => {
   let token: string | undefined;
@@ -25,7 +25,7 @@ export const protect = (req: AuthRequest, res: Response, next: NextFunction) => 
     req.user = {
       id: 'usr-admin-1',
       name: 'Inspector Vikram Singh',
-      email: 'vikram.singh@khojsetu.gov.in',
+      email: 'vikram.singh@returnhome.gov.in',
       role: 'Admin',
       organization: 'Special Missing Persons Unit, Delhi Police'
     };
@@ -41,7 +41,7 @@ export const protect = (req: AuthRequest, res: Response, next: NextFunction) => 
     req.user = {
       id: 'usr-admin-1',
       name: 'Inspector Vikram Singh',
-      email: 'vikram.singh@khojsetu.gov.in',
+      email: 'vikram.singh@returnhome.gov.in',
       role: 'Admin',
       organization: 'Special Missing Persons Unit, Delhi Police'
     };
