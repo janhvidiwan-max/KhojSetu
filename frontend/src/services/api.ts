@@ -1,87 +1,3 @@
-import { User, MissingPersonCase, CandidateMatch, TimelineEvent, AuditLogItem, DashboardStats } from '../types';
-
-// Auto-sanitize and migrate any legacy client-side localStorage keys/values to ReturnHome
-function autoSanitizeLocalStorage() {
-  try {
-    const oldKeys = ['khojsetu_cases', 'khojsetu_matches', 'khojsetu_permissions', 'khojsetu_audit', 'khojsetu_user', 'khojsetu_token', 'khojsetu_users'];
-    oldKeys.forEach(oldKey => {
-      const val = localStorage.getItem(oldKey);
-      if (val) {
-        const newKey = oldKey.replace('khojsetu_', 'returnhome_');
-        if (!localStorage.getItem(newKey)) {
-          localStorage.setItem(newKey, val);
-        }
-        localStorage.removeItem(oldKey);
-      }
-    });
-
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && (key.startsWith('returnhome_') || key.startsWith('khojsetu_'))) {
-        let val = localStorage.getItem(key);
-        if (val && (val.includes('KhojSetu') || val.includes('khojsetu') || val.includes('Khojsetu'))) {
-          val = val.replace(/KhojSetu/gi, 'ReturnHome').replace(/khojsetu/gi, 'returnhome');
-          localStorage.setItem(key, val);
-        }
-      }
-    }
-
-    // Explicitly purge test case MP-2026-9604 (nishi) from localStorage
-    const casesRaw = localStorage.getItem('returnhome_cases');
-    if (casesRaw) {
-      const parsedCases = JSON.parse(casesRaw);
-      const filteredCases = parsedCases.filter((c: any) => c.caseId !== 'MP-2026-9604' && c.name?.toLowerCase() !== 'nishi');
-      if (filteredCases.length !== parsedCases.length) {
-        localStorage.setItem('returnhome_cases', JSON.stringify(filteredCases));
-      }
-    }
-    const matchesRaw = localStorage.getItem('returnhome_matches');
-    if (matchesRaw) {
-      const parsedMatches = JSON.parse(matchesRaw);
-      const filteredMatches = parsedMatches.filter((m: any) => m.caseId !== 'MP-2026-9604');
-      if (filteredMatches.length !== parsedMatches.length) {
-        localStorage.setItem('returnhome_matches', JSON.stringify(filteredMatches));
-      }
-    }
-  } catch {
-    // Ignore cross-origin or storage quota exceptions
-  }
-}
-
-autoSanitizeLocalStorage();
-
-const API_BASE_URL = '/api';
-
-// Helper for HTTP requests
-async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const token = localStorage.getItem('returnhome_token');
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string>),
-  };
-
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
-
-  const contentType = response.headers.get('content-type');
-  if (!contentType || !contentType.includes('application/json')) {
-    throw new Error('Non-JSON response from API endpoint');
-  }
-
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.message || 'API request failed');
-  }
-
-  return data;
-}
-
 // Initial Mock Database
 const INITIAL_CASES: MissingPersonCase[] = [
   {
@@ -197,6 +113,113 @@ const INITIAL_CASES: MissingPersonCase[] = [
     updatedAt: '2026-09-06T16:20:00Z'
   }
 ];
+
+// Auto-sanitize and migrate any legacy client-side localStorage keys/values to ReturnHome
+function autoSanitizeLocalStorage() {
+  try {
+    // 1. Gather all cases from any legacy or current keys
+    const rawCasesMap = new Map<string, any>();
+
+    // Seed defaults first
+    INITIAL_CASES.forEach(c => rawCasesMap.set(c.caseId, c));
+
+    const keysToGather = ['returnhome_cases', 'khojsetu_cases', 'cases', 'my_cases'];
+    keysToGather.forEach(key => {
+      const val = localStorage.getItem(key);
+      if (val) {
+        try {
+          const parsed = JSON.parse(val);
+          if (Array.isArray(parsed)) {
+            parsed.forEach((c: any) => {
+              if (c && (c.caseId || c.name)) {
+                const id = c.caseId || `MP-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+                // Filter out purged case MP-2026-9604
+                if (id !== 'MP-2026-9604') {
+                  if (id === 'MP-2026-0003' && (c.name === 'Rohan Gupta' || c.age === 72)) {
+                    rawCasesMap.set(id, INITIAL_CASES[2]);
+                  } else {
+                    rawCasesMap.set(id, { ...c, caseId: id });
+                  }
+                }
+              }
+            });
+          }
+        } catch {
+          // Ignore parse errors
+        }
+      }
+    });
+
+    const finalCases = Array.from(rawCasesMap.values());
+    localStorage.setItem('returnhome_cases', JSON.stringify(finalCases));
+
+    // Remove legacy keys
+    ['khojsetu_cases', 'cases', 'my_cases'].forEach(k => localStorage.removeItem(k));
+
+    // Migrate other khojsetu_ keys to returnhome_
+    const oldOtherKeys = ['khojsetu_matches', 'khojsetu_permissions', 'khojsetu_audit', 'khojsetu_user', 'khojsetu_token', 'khojsetu_users'];
+    oldOtherKeys.forEach(oldKey => {
+      const val = localStorage.getItem(oldKey);
+      if (val) {
+        const newKey = oldKey.replace('khojsetu_', 'returnhome_');
+        if (!localStorage.getItem(newKey)) {
+          localStorage.setItem(newKey, val);
+        }
+        localStorage.removeItem(oldKey);
+      }
+    });
+
+    // Global string replacement for any legacy KhojSetu branding in localStorage values
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith('returnhome_') || key.startsWith('khojsetu_'))) {
+        let val = localStorage.getItem(key);
+        if (val && (val.includes('KhojSetu') || val.includes('khojsetu') || val.includes('Khojsetu'))) {
+          val = val.replace(/KhojSetu/gi, 'ReturnHome').replace(/khojsetu/gi, 'returnhome');
+          localStorage.setItem(key, val);
+        }
+      }
+    }
+  } catch {
+    // Ignore cross-origin or storage quota exceptions
+  }
+}
+
+autoSanitizeLocalStorage();
+
+const API_BASE_URL = '/api';
+
+// Helper for HTTP requests
+async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const token = localStorage.getItem('returnhome_token');
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string>),
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers,
+  });
+
+  const contentType = response.headers.get('content-type');
+  if (!contentType || !contentType.includes('application/json')) {
+    throw new Error('Non-JSON response from API endpoint');
+  }
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || 'API request failed');
+  }
+
+  return data;
+}
+
+
 
 const INITIAL_MATCHES: CandidateMatch[] = [
   {
