@@ -6,10 +6,28 @@ import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import BrandDisclaimer from '../components/branding/BrandDisclaimer';
 import LogoMark from '../components/branding/LogoMark';
+import { apiService } from '../services/api';
+import { MissingPersonCase } from '../types';
 
 export const MapViewPage: React.FC = () => {
+  const [casesList, setCasesList] = useState<MissingPersonCase[]>([]);
   const [selectedCase, setSelectedCase] = useState('MP-2026-0001');
   const [mapMode, setMapMode] = useState<'satellite' | 'street' | 'hybrid'>('satellite');
+
+  useEffect(() => {
+    async function loadCases() {
+      try {
+        const res = await apiService.getCases();
+        if (res.cases && res.cases.length > 0) {
+          setCasesList(res.cases);
+          setSelectedCase(res.cases[0].caseId);
+        }
+      } catch {
+        // ignore
+      }
+    }
+    loadCases();
+  }, []);
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -235,8 +253,14 @@ export const MapViewPage: React.FC = () => {
                 onChange={(e) => setSelectedCase(e.target.value)}
                 className="bg-slate-100 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-indigo-700 font-extrabold focus:border-cyan-500 focus:bg-white"
               >
-                <option value="MP-2026-0001">MP-2026-0001 — Aarav Sharma</option>
-                <option value="MP-2026-0002">MP-2026-0002 — Priya Verma</option>
+                {casesList.map((c) => (
+                  <option key={c.caseId} value={c.caseId}>
+                    {c.caseId} — {c.name} ({c.lastSeenLocation})
+                  </option>
+                ))}
+                {casesList.length === 0 && (
+                  <option value="MP-2026-0001">MP-2026-0001 — Aarav Sharma</option>
+                )}
               </select>
             </div>
           </div>

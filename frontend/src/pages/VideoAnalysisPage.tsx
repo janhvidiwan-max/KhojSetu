@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Video, Play, Cpu, CheckCircle2, Eye, RefreshCw } from 'lucide-react';
 import Sidebar from '../components/layout/Sidebar';
@@ -7,10 +7,11 @@ import Footer from '../components/layout/Footer';
 import BrandDisclaimer from '../components/branding/BrandDisclaimer';
 import LogoMark from '../components/branding/LogoMark';
 import { apiService } from '../services/api';
-import { CandidateMatch } from '../types';
+import { CandidateMatch, MissingPersonCase } from '../types';
 
 export const VideoAnalysisPage: React.FC = () => {
   const navigate = useNavigate();
+  const [casesList, setCasesList] = useState<MissingPersonCase[]>([]);
   const [selectedCase, setSelectedCase] = useState('MP-2026-0001');
   const [selectedCamera, setSelectedCamera] = useState('CAM-01');
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -22,6 +23,21 @@ export const VideoAnalysisPage: React.FC = () => {
   const [tracksCount, setTracksCount] = useState(0);
   
   const [results, setResults] = useState<CandidateMatch[]>([]);
+
+  useEffect(() => {
+    async function loadCases() {
+      try {
+        const res = await apiService.getCases();
+        if (res.cases && res.cases.length > 0) {
+          setCasesList(res.cases);
+          setSelectedCase(res.cases[0].caseId);
+        }
+      } catch (err) {
+        console.warn('Backend server offline');
+      }
+    }
+    loadCases();
+  }, []);
 
   const handleStartAnalysis = async () => {
     setIsProcessing(true);
@@ -118,9 +134,14 @@ export const VideoAnalysisPage: React.FC = () => {
                   onChange={(e) => setSelectedCase(e.target.value)}
                   className="w-full bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 font-bold focus:border-cyan-500 focus:bg-white"
                 >
-                  <option value="MP-2026-0001">MP-2026-0001 — Aarav Sharma (Age 12)</option>
-                  <option value="MP-2026-0002">MP-2026-0002 — Priya Verma (Age 24)</option>
-                  <option value="MP-2026-0003">MP-2026-0003 — Rohan Gupta (Age 72)</option>
+                  {casesList.map((c) => (
+                    <option key={c.caseId} value={c.caseId}>
+                      {c.caseId} — {c.name} (Age {c.age}) • {c.lastSeenLocation}
+                    </option>
+                  ))}
+                  {casesList.length === 0 && (
+                    <option value="MP-2026-0001">MP-2026-0001 — Aarav Sharma (Age 12)</option>
+                  )}
                 </select>
               </div>
 
