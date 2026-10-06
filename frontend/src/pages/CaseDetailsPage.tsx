@@ -18,7 +18,8 @@ import {
   ChevronDown,
   Lock,
   UserCheck,
-  Plus
+  Plus,
+  Trash2
 } from 'lucide-react';
 import Sidebar from '../components/layout/Sidebar';
 import Navbar from '../components/layout/Navbar';
@@ -133,6 +134,14 @@ export const CaseDetailsPage: React.FC = () => {
     }
   };
 
+  const handleDeleteCase = async () => {
+    if (!caseItem) return;
+    if (window.confirm(`Are you sure you want to permanently delete case ${caseItem.caseId} (${caseItem.name})?`)) {
+      await apiService.deleteCase(caseItem.caseId);
+      navigate('/cases');
+    }
+  };
+
   if (!caseItem) {
     return (
       <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">
@@ -238,6 +247,13 @@ export const CaseDetailsPage: React.FC = () => {
                 className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 hover:opacity-95 text-xs font-semibold text-white shadow-md flex items-center gap-1.5"
               >
                 <Printer className="w-3.5 h-3.5" /> Export Dossier (PDF)
+              </button>
+              <button
+                onClick={handleDeleteCase}
+                className="px-3.5 py-1.5 rounded-xl bg-red-500/20 border border-red-500/40 hover:bg-red-500/30 text-xs font-semibold text-red-300 flex items-center gap-1.5 transition-colors"
+                title="Delete case permanently"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-red-400" /> Delete Case
               </button>
             </div>
           </div>

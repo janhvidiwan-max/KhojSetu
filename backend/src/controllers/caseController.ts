@@ -212,3 +212,36 @@ export const updateCase = async (req: AuthRequest, res: Response) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+export const deleteCase = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const caseIndex = memoryStore.cases.findIndex(c => c.caseId.toLowerCase() === id.toLowerCase() || c._id === id);
+
+    if (caseIndex !== -1) {
+      const deletedCase = memoryStore.cases[caseIndex];
+      memoryStore.cases.splice(caseIndex, 1);
+
+      // Audit Log
+      memoryStore.auditLogs.unshift({
+        id: `log-${Date.now()}`,
+        userId: req.user?.id || 'usr-admin-1',
+        userName: req.user?.name || 'Inspector Vikram Singh',
+        userRole: req.user?.role || 'Admin',
+        action: 'CASE_DELETE',
+        resource: 'Cases',
+        resourceId: deletedCase.caseId,
+        ipAddress: req.ip || '127.0.0.1',
+        details: `Deleted missing person case ${deletedCase.caseId} (${deletedCase.name}).`,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: `Case ${id} removed successfully.`
+    });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};

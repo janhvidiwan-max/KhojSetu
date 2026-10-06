@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, UserPlus, Eye, Edit } from 'lucide-react';
+import { Search, Filter, UserPlus, Eye, Edit, Trash2 } from 'lucide-react';
 import Sidebar from '../components/layout/Sidebar';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
@@ -33,6 +33,14 @@ export const MissingPersonsPage: React.FC = () => {
     }
     loadCases();
   }, [search, statusFilter, priorityFilter, genderFilter]);
+
+  const handleDeleteCase = async (e: React.MouseEvent, caseId: string, caseName: string) => {
+    e.stopPropagation();
+    if (window.confirm(`Are you sure you want to permanently delete case ${caseId} (${caseName})?`)) {
+      await apiService.deleteCase(caseId);
+      setCases(prev => prev.filter(c => c.caseId !== caseId));
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex">
@@ -192,6 +200,13 @@ export const MissingPersonsPage: React.FC = () => {
                           title="Edit Case"
                         >
                           <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => handleDeleteCase(e, c.caseId, c.name)}
+                          className="p-2 rounded-xl bg-slate-100 hover:bg-red-50 text-red-600 transition-colors"
+                          title="Delete Case"
+                        >
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </td>

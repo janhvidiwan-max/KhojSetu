@@ -460,6 +460,28 @@ export const apiService = {
     }
   },
 
+  async deleteCase(id: string) {
+    try {
+      return await fetchAPI<{ success: boolean; message: string }>(`/cases/${id}`, {
+        method: 'DELETE',
+      });
+    } catch {
+      const cases = getLocalCases();
+      const filtered = cases.filter((c) => c.caseId.toLowerCase() !== id.toLowerCase() && c.id !== id);
+      saveLocalCases(filtered);
+
+      const matches = getLocalMatches();
+      const filteredMatches = matches.filter((m) => m.caseId.toLowerCase() !== id.toLowerCase());
+      saveLocalMatches(filteredMatches);
+
+      const perms = getLocalPermissions();
+      const filteredPerms = perms.filter((p) => p.caseId.toLowerCase() !== id.toLowerCase());
+      saveLocalPermissions(filteredPerms);
+
+      return { success: true, message: `Case ${id} deleted successfully.` };
+    }
+  },
+
   // Matches
   async getMatches(params: Record<string, string> = {}) {
     try {

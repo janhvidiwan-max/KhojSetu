@@ -9,7 +9,8 @@ import {
   Clock, 
   ArrowUpRight, 
   BarChart3,
-  ShieldAlert
+  ShieldAlert,
+  Trash2
 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
 import Sidebar from '../components/layout/Sidebar';
@@ -50,6 +51,14 @@ export const DashboardPage: React.FC = () => {
     }
     loadData();
   }, []);
+
+  const handleDeleteCase = async (e: React.MouseEvent, caseId: string, caseName: string) => {
+    e.stopPropagation();
+    if (window.confirm(`Are you sure you want to permanently delete case ${caseId} (${caseName})?`)) {
+      await apiService.deleteCase(caseId);
+      setRecentCases(prev => prev.filter(c => c.caseId !== caseId));
+    }
+  };
 
   const monthlyTrendData = [
     { month: 'Apr', cases: 12, matches: 6 },
@@ -157,7 +166,8 @@ export const DashboardPage: React.FC = () => {
                       <th className="py-2.5 px-3">Age</th>
                       <th className="py-2.5 px-3">Last Seen</th>
                       <th className="py-2.5 px-3">Location</th>
-                      <th className="py-2.5 px-3 rounded-r-lg">Status</th>
+                      <th className="py-2.5 px-3">Status</th>
+                      <th className="py-2.5 px-3 rounded-r-lg text-right">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -168,17 +178,17 @@ export const DashboardPage: React.FC = () => {
                         className="hover:bg-slate-50 cursor-pointer transition-colors"
                       >
                         <td className="py-3 px-3 font-mono font-bold text-indigo-700">{c.caseId}</td>
-                        <td className="py-3 px-3 font-bold text-slate-900 flex items-center gap-2">
+                        <td className="py-3 px-3 font-bold text-slate-900 flex items-center gap-2.5">
                           <img
-                            src={c.photos[0] || 'https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?auto=format&fit=crop&w=100&q=80'}
+                            src={c.photos && c.photos.length > 0 ? c.photos[0] : 'https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?auto=format&fit=crop&w=100&q=80'}
                             alt={c.name}
-                            className="w-7.5 h-7.5 rounded-full object-cover border border-slate-300 shadow-sm"
+                            className="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-300 shadow-sm"
                           />
-                          <span>{c.name}</span>
+                          <span className="truncate max-w-[110px] font-semibold text-slate-900">{c.name}</span>
                         </td>
                         <td className="py-3 px-3 text-slate-700 font-medium">{c.age} yrs</td>
                         <td className="py-3 px-3 text-slate-500 font-medium">{c.lastSeenDate}</td>
-                        <td className="py-3 px-3 text-slate-700 font-medium max-w-[140px] truncate">{c.lastSeenLocation}</td>
+                        <td className="py-3 px-3 text-slate-700 font-medium max-w-[130px] truncate">{c.lastSeenLocation}</td>
                         <td className="py-3 px-3">
                           <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${
                             c.status === 'Potential Match' ? 'bg-amber-100 text-amber-900 border border-amber-300' :
@@ -187,6 +197,15 @@ export const DashboardPage: React.FC = () => {
                           }`}>
                             {c.status}
                           </span>
+                        </td>
+                        <td className="py-3 px-3 text-right">
+                          <button
+                            onClick={(e) => handleDeleteCase(e, c.caseId, c.name)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                            title="Delete case"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </td>
                       </tr>
                     ))}
