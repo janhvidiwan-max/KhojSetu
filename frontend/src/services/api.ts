@@ -25,6 +25,24 @@ function autoSanitizeLocalStorage() {
         }
       }
     }
+
+    // Explicitly purge test case MP-2026-9604 (nishi) from localStorage
+    const casesRaw = localStorage.getItem('returnhome_cases');
+    if (casesRaw) {
+      const parsedCases = JSON.parse(casesRaw);
+      const filteredCases = parsedCases.filter((c: any) => c.caseId !== 'MP-2026-9604' && c.name?.toLowerCase() !== 'nishi');
+      if (filteredCases.length !== parsedCases.length) {
+        localStorage.setItem('returnhome_cases', JSON.stringify(filteredCases));
+      }
+    }
+    const matchesRaw = localStorage.getItem('returnhome_matches');
+    if (matchesRaw) {
+      const parsedMatches = JSON.parse(matchesRaw);
+      const filteredMatches = parsedMatches.filter((m: any) => m.caseId !== 'MP-2026-9604');
+      if (filteredMatches.length !== parsedMatches.length) {
+        localStorage.setItem('returnhome_matches', JSON.stringify(filteredMatches));
+      }
+    }
   } catch {
     // Ignore cross-origin or storage quota exceptions
   }
