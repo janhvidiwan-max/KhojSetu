@@ -260,22 +260,39 @@ const INITIAL_MATCHES: CandidateMatch[] = [
 
 // Helper to get local storage cases
 function getLocalCases(): MissingPersonCase[] {
+  let userCases: MissingPersonCase[] = [];
   try {
     const raw = localStorage.getItem('returnhome_cases');
     if (raw) {
-      const parsed: MissingPersonCase[] = JSON.parse(raw);
-      const filtered = parsed.filter(c => c.caseId !== 'MP-2026-9604');
-      if (filtered.length !== parsed.length) {
-        localStorage.setItem('returnhome_cases', JSON.stringify(filtered));
-      }
-      return filtered;
+      userCases = JSON.parse(raw);
     }
   } catch {
     // Ignore error
   }
-  const filteredInitial = INITIAL_CASES.filter(c => c.caseId !== 'MP-2026-9604');
-  localStorage.setItem('returnhome_cases', JSON.stringify(filteredInitial));
-  return filteredInitial;
+
+  // Filter out purged test case MP-2026-9604
+  userCases = userCases.filter((c) => c.caseId !== 'MP-2026-9604');
+
+  // Replace stale Rohan Gupta entry with Rajesh Kumar if present
+  userCases = userCases.map((c) => {
+    if (c.caseId === 'MP-2026-0003' && (c.name === 'Rohan Gupta' || c.age === 72)) {
+      return INITIAL_CASES[2];
+    }
+    return c;
+  });
+
+  // Combine INITIAL_CASES and userCases into a deduplicated Map
+  const map = new Map<string, MissingPersonCase>();
+  INITIAL_CASES.forEach((c) => map.set(c.caseId, c));
+  userCases.forEach((c) => map.set(c.caseId, c));
+
+  const result = Array.from(map.values());
+  try {
+    localStorage.setItem('returnhome_cases', JSON.stringify(result));
+  } catch {
+    // Ignore
+  }
+  return result;
 }
 
 function saveLocalCases(cases: MissingPersonCase[]) {
@@ -377,7 +394,12 @@ export const apiService = {
       const query = new URLSearchParams(queryParams).toString();
       const res = await fetchAPI<{ success: boolean; total: number; cases: MissingPersonCase[] }>(`/cases?${query}`);
       if (res && res.cases) {
-        apiCases = res.cases;
+        apiCases = res.cases.map((c) => {
+          if (c.caseId === 'MP-2026-0003' && (c.name === 'Rohan Gupta' || c.age === 72)) {
+            return INITIAL_CASES[2];
+          }
+          return c;
+        });
       }
     } catch {
       // Backend offline or unreachable
@@ -386,12 +408,16 @@ export const apiService = {
     const localCases = getLocalCases();
     const caseMap = new Map<string, MissingPersonCase>();
 
-    // Add local cases first (contains user's newly created cases)
-    localCases.forEach((c) => caseMap.set(c.caseId, c));
+    // Add local cases first (contains user's newly created cases and INITIAL_CASES)
+    localCases.forEach((c) => {
+      if (c.caseId !== 'MP-2026-9604') {
+        caseMap.set(c.caseId, c);
+      }
+    });
 
     // Add API cases if not already present
     apiCases.forEach((c) => {
-      if (!caseMap.has(c.caseId)) {
+      if (c.caseId !== 'MP-2026-9604' && !caseMap.has(c.caseId)) {
         caseMap.set(c.caseId, c);
       }
     });
