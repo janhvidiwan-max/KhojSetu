@@ -363,25 +363,44 @@ export const apiService = {
 
   // Cases
   async getCases(params: Record<string, string> = {}) {
+    let apiCases: MissingPersonCase[] = [];
     try {
-      const query = new URLSearchParams(params).toString();
-      return await fetchAPI<{ success: boolean; total: number; cases: MissingPersonCase[] }>(`/cases?${query}`);
+      const queryParams = { limit: '100', ...params };
+      const query = new URLSearchParams(queryParams).toString();
+      const res = await fetchAPI<{ success: boolean; total: number; cases: MissingPersonCase[] }>(`/cases?${query}`);
+      if (res && res.cases) {
+        apiCases = res.cases;
+      }
     } catch {
-      const cases = getLocalCases();
-      let filtered = [...cases];
-
-      if (params.search) {
-        const q = params.search.toLowerCase();
-        filtered = filtered.filter(
-          (c) => c.name.toLowerCase().includes(q) || c.caseId.toLowerCase().includes(q) || c.lastSeenLocation.toLowerCase().includes(q)
-        );
-      }
-      if (params.status && params.status !== 'All') {
-        filtered = filtered.filter((c) => c.status === params.status);
-      }
-
-      return { success: true, total: filtered.length, cases: filtered };
+      // Backend offline or unreachable
     }
+
+    const localCases = getLocalCases();
+    const caseMap = new Map<string, MissingPersonCase>();
+
+    // Add local cases first (contains user's newly created cases)
+    localCases.forEach((c) => caseMap.set(c.caseId, c));
+
+    // Add API cases if not already present
+    apiCases.forEach((c) => {
+      if (!caseMap.has(c.caseId)) {
+        caseMap.set(c.caseId, c);
+      }
+    });
+
+    let filtered = Array.from(caseMap.values());
+
+    if (params.search) {
+      const q = params.search.toLowerCase();
+      filtered = filtered.filter(
+        (c) => c.name.toLowerCase().includes(q) || c.caseId.toLowerCase().includes(q) || c.lastSeenLocation.toLowerCase().includes(q)
+      );
+    }
+    if (params.status && params.status !== 'All') {
+      filtered = filtered.filter((c) => c.status === params.status);
+    }
+
+    return { success: true, total: filtered.length, cases: filtered };
   },
 
   async getCaseById(id: string) {

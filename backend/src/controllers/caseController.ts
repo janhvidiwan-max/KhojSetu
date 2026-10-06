@@ -4,7 +4,7 @@ import { AuthRequest } from '../middleware/authMiddleware';
 
 export const getCases = async (req: Request, res: Response) => {
   try {
-    const { search, status, priority, gender, ageMin, ageMax, page = 1, limit = 10 } = req.query;
+    const { search, status, priority, gender, ageMin, ageMax, page = 1, limit = 100 } = req.query;
 
     let filtered = [...memoryStore.cases];
 
