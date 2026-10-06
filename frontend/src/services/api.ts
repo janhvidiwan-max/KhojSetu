@@ -262,12 +262,20 @@ const INITIAL_MATCHES: CandidateMatch[] = [
 function getLocalCases(): MissingPersonCase[] {
   try {
     const raw = localStorage.getItem('returnhome_cases');
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed: MissingPersonCase[] = JSON.parse(raw);
+      const filtered = parsed.filter(c => c.caseId !== 'MP-2026-9604');
+      if (filtered.length !== parsed.length) {
+        localStorage.setItem('returnhome_cases', JSON.stringify(filtered));
+      }
+      return filtered;
+    }
   } catch {
     // Ignore error
   }
-  localStorage.setItem('returnhome_cases', JSON.stringify(INITIAL_CASES));
-  return INITIAL_CASES;
+  const filteredInitial = INITIAL_CASES.filter(c => c.caseId !== 'MP-2026-9604');
+  localStorage.setItem('returnhome_cases', JSON.stringify(filteredInitial));
+  return filteredInitial;
 }
 
 function saveLocalCases(cases: MissingPersonCase[]) {
@@ -499,24 +507,26 @@ export const apiService = {
 
   async deleteCase(id: string) {
     try {
-      return await fetchAPI<{ success: boolean; message: string }>(`/cases/${id}`, {
+      await fetchAPI<{ success: boolean; message: string }>(`/cases/${id}`, {
         method: 'DELETE',
       });
     } catch {
-      const cases = getLocalCases();
-      const filtered = cases.filter((c) => c.caseId.toLowerCase() !== id.toLowerCase() && c.id !== id);
-      saveLocalCases(filtered);
-
-      const matches = getLocalMatches();
-      const filteredMatches = matches.filter((m) => m.caseId.toLowerCase() !== id.toLowerCase());
-      saveLocalMatches(filteredMatches);
-
-      const perms = getLocalPermissions();
-      const filteredPerms = perms.filter((p) => p.caseId.toLowerCase() !== id.toLowerCase());
-      saveLocalPermissions(filteredPerms);
-
-      return { success: true, message: `Case ${id} deleted successfully.` };
+      // Backend offline or route unhandled
     }
+
+    const cases = getLocalCases();
+    const filtered = cases.filter((c) => c.caseId.toLowerCase() !== id.toLowerCase() && c.id !== id);
+    saveLocalCases(filtered);
+
+    const matches = getLocalMatches();
+    const filteredMatches = matches.filter((m) => m.caseId.toLowerCase() !== id.toLowerCase());
+    saveLocalMatches(filteredMatches);
+
+    const perms = getLocalPermissions();
+    const filteredPerms = perms.filter((p) => p.caseId.toLowerCase() !== id.toLowerCase());
+    saveLocalPermissions(filteredPerms);
+
+    return { success: true, message: `Case ${id} deleted successfully.` };
   },
 
   // Matches
