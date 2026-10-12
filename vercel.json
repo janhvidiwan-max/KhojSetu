@@ -1,5 +1,4 @@
 {
-  "name": "returnhome",
   "buildCommand": "npm run build",
   "outputDirectory": "frontend/dist",
   "rewrites": [
