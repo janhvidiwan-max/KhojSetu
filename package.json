@@ -4,6 +4,7 @@
   "description": "ReturnHome — Intelligent Missing Person Detection & Reconnection System ('Reconnecting Loved Ones • From Missing to Found.')",
   "main": "index.js",
   "scripts": {
+    "build": "npm --prefix frontend install && npm --prefix frontend run build && node -e \"require('fs').cpSync('frontend/dist', 'dist', {recursive: true})\"",
     "dev": "npm --prefix frontend run dev",
     "dev:frontend": "npm --prefix frontend run dev",
     "dev:backend": "npm --prefix backend run dev",
